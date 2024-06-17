@@ -155,6 +155,10 @@ func TestHttpServer_handlePrometheusMetrics(t *testing.T) {
 	assert.Contains(t, promExp, `burrow_kafka_consumer_partition_lag{cluster="testcluster",consumer_group="testgroup",partition="0",topic="incomplete"} 0`)
 	assert.Contains(t, promExp, `burrow_kafka_consumer_partition_lag{cluster="testcluster",consumer_group="testgroup",partition="1",topic="incomplete"} 10`)
 
+	assert.Contains(t, promExp, `burrow_kafka_consumer_topic_lag{cluster="testcluster",consumer_group="testgroup",topic="testtopic"} 110`)
+	assert.Contains(t, promExp, `burrow_kafka_consumer_topic_lag{cluster="testcluster",consumer_group="testgroup",topic="testtopic1"} 50`)
+	assert.Contains(t, promExp, `burrow_kafka_consumer_topic_lag{cluster="testcluster",consumer_group="testgroup",topic="incomplete"} 10`)
+
 	assert.Contains(t, promExp, `burrow_kafka_consumer_current_offset{cluster="testcluster",consumer_group="testgroup",partition="0",topic="testtopic"} 22663`)
 	assert.Contains(t, promExp, `burrow_kafka_consumer_current_offset{cluster="testcluster",consumer_group="testgroup",partition="1",topic="testtopic"} 2488`)
 	assert.Contains(t, promExp, `burrow_kafka_consumer_current_offset{cluster="testcluster",consumer_group="testgroup",partition="0",topic="testtopic1"} 99888`)
