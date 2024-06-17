@@ -53,6 +53,14 @@ var (
 		[]string{"cluster", "consumer_group", "topic", "partition"},
 	)
 
+	consumerTopicLagGauge = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "burrow_kafka_consumer_topic_lag",
+			Help: "Number of messages the consumer group is behind by for a topic as reported by Burrow",
+		},
+		[]string{"cluster", "consumer_group", "topic"},
+	)
+
 	topicPartitionOffsetGauge = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "burrow_kafka_topic_partition_offset",
@@ -127,6 +135,8 @@ func (hc *Coordinator) handlePrometheusMetrics() http.HandlerFunc {
 				consumerTotalLagGauge.With(labels).Set(float64(consumerStatus.TotalLag))
 				consumerStatusGauge.With(labels).Set(float64(consumerStatus.Status))
 
+				topicLags := make(map[string]uint64)
+
 				for _, partition := range consumerStatus.Partitions {
 					labels := map[string]string{
 						"cluster":        cluster,
@@ -136,11 +146,22 @@ func (hc *Coordinator) handlePrometheusMetrics() http.HandlerFunc {
 					}
 
 					consumerPartitionLagGauge.With(labels).Set(float64(partition.CurrentLag))
+					topicLags[partition.Topic] += partition.CurrentLag
 
 					if partition.Complete == 1.0 {
 						consumerPartitionCurrentOffset.With(labels).Set(float64(partition.End.Offset))
 						partitionStatusGauge.With(labels).Set(float64(partition.Status))
 					}
+				}
+
+				for topic, lag := range topicLags {
+					labels := map[string]string{
+						"cluster":        cluster,
+						"consumer_group": consumer,
+						"topic":          topic,
+					}
+
+					consumerTopicLagGauge.With(labels).Set(float64(lag))
 				}
 			}
 
